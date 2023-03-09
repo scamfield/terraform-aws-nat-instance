@@ -22,6 +22,15 @@ data "aws_caller_identity" "current" {}
 
 data "aws_region" "current" {}
 
+data "aws_route_table" "private" {
+  for_each = toset(var.private_subnet_ids)
+  subnet_id = each.value
+
+  depends_on = [
+    data.aws_subnet.subnets,
+  ]
+}
+
 data "aws_subnet" "eni_subnet" {
   for_each = aws_network_interface.eni
 
@@ -64,6 +73,10 @@ data "template_file" "cloudinit_base" {
   }
 }
 
+data "template_file" "nat_add_route_script" {
+  template = file("${path.module}/templates/usr/local/bin/add_default_route.py.tpl")
+}
+
 data "template_file" "nat_failover_systemd" {
   template = file("${path.module}/templates/etc/systemd/system/nat-failover.service.tpl")
 }
@@ -74,8 +87,4 @@ data "template_file" "nat_failover_trigger_script" {
   vars = {
     sns_arn = aws_sns_topic.nat_failover_topic.arn
   }
-}
-
-data "template_file" "nat_add_route_script" {
-  template = file("${path.module}/templates/usr/local/bin/add_default_route.py.tpl")
 }

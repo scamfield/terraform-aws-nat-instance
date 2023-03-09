@@ -32,12 +32,9 @@ resource "aws_iam_role_policy" "modify_routes" {
         "Sid" : "AllowCreateRoute",
         "Effect" : "Allow",
         "Action" : "ec2:CreateRoute",
-        "Resource" : "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:route-table/*",
-        "Condition" : {
-          "ForAnyValue:StringEquals" : {
-            "ec2:Subnet" : "${var.private_subnet_ids}"
-          }
-        }
+        "Resource" : [
+          for subnet_id, route_table in data.aws_route_table.private : "arn:aws:ec2:*:${data.aws_caller_identity.current.account_id}:route-table/${route_table.id}"
+        ]
       },
       {
         "Sid" : "AllowDescribeInstancesNetworkInterfacesSubnetsAndRouteTables",
